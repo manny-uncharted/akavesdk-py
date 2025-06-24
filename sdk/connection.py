@@ -42,22 +42,24 @@ class ConnectionPool:
         self.close = retry_decorator(self.close) 
 
     def create_client(self, addr: str, pooled: bool) -> Tuple[Optional[nodeapi_pb2_grpc.NodeAPIStub], Optional[Callable[[], None]], Optional[Exception]]:
+        # 1. If pooled: try to grab existing, else fall back to new
         if pooled:
-            conn = self.get(addr)
-            if conn is None:
-                return None, None, Exception("Failed to get connection")
+            conn = self.get(addr) or self._new_connection(addr)
+            if not conn:
+                return None, None, Exception(f"Failed to get or create pooled connection to {addr}")
             return nodeapi_pb2_grpc.NodeAPIStub(conn), None, None
 
+        # 2. If non-pooled: always create a fresh one (with fallback retry on None)
         conn = self._new_connection(addr)
-        if conn is None:
-            return None, None, Exception("Failed to create connection")
+        if not conn:
+            return None, None, Exception(f"Failed to create non-pooled connection to {addr}")
         return nodeapi_pb2_grpc.NodeAPIStub(conn), (lambda: conn.close() if conn is not None else None), None
 
     def create_ipc_client(self, addr: str, pooled: bool) -> Tuple[Optional[ipcnodeapi_pb2_grpc.IPCNodeAPIStub], Optional[Callable[[], None]], Optional[Exception]]:
         if pooled:
-            conn = self.get(addr)
-            if conn is None:
-                return None, None, Exception("Failed to get connection")
+            conn = self.get(addr) or self._new_connection(addr)
+            if not conn:
+                return None, None, Exception(f"Failed to get or create pooled IPC connection to {addr}")
             return ipcnodeapi_pb2_grpc.IPCNodeAPIStub(conn), None, None
 
         conn = self._new_connection(addr)
