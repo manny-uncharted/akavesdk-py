@@ -11,11 +11,10 @@ from typing import List, Optional, Union, Any, NewType
 from dataclasses import dataclass
 from datetime import datetime
 
-from multiformats.cid import CID as CIDType
+from .types import  CID, TimestampType
 
 
-# Type for timestamp fields that could be different formats
-TimestampType = Union[datetime, float, int]
+
 
 @dataclass
 class BucketCreateResult:
@@ -34,7 +33,7 @@ class Bucket:
 @dataclass
 class Chunk:
     """A piece of metadata of some file."""
-    cid: str
+    cid: CID
     encoded_size: int
     size: int
     index: int
@@ -57,7 +56,7 @@ class FilecoinBlockData:
 @dataclass
 class FileBlockUpload:
     """A piece of metadata of some file used for upload."""
-    cid: str
+    cid: CID
     data: bytes
     node_address: str = ""
     node_id: str = ""
@@ -88,7 +87,7 @@ class FileBlockUpload:
 @dataclass
 class FileBlockDownload:
     """A piece of metadata of some file used for download."""
-    cid: str
+    cid: CID
     data: bytes
     filecoin: Optional[FilecoinBlockData] = None
     akave: Optional[AkaveBlockData] = None
@@ -97,7 +96,7 @@ class FileBlockDownload:
 @dataclass
 class FileListItem:
     """Contains bucket file list file meta information."""
-    root_cid: str
+    root_cid: CID
     name: str
     size: int
     created_at: TimestampType
@@ -136,7 +135,7 @@ class FileDownload:
 @dataclass
 class FileChunkDownload:
     """Contains single file chunk meta information."""
-    cid: str
+    cid: CID
     index: int
     encoded_size: int
     size: int
@@ -147,7 +146,7 @@ class FileChunkDownload:
 class FileMeta:
     """Contains single file meta information."""
     stream_id: str
-    root_cid: str
+    root_cid: CID
     bucket_name: str
     name: str
     encoded_size: int
@@ -182,7 +181,7 @@ class IPCFileDownload:
 @dataclass
 class IPCFileListItem:
     """Contains IPC bucket file list file meta information."""
-    root_cid: str
+    root_cid: CID
     name: str
     encoded_size: int
     created_at: TimestampType
@@ -191,7 +190,7 @@ class IPCFileListItem:
 @dataclass
 class IPCFileMeta:
     """Contains single IPC file meta information."""
-    root_cid: str
+    root_cid: CID
     name: str
     bucket_name: str
     encoded_size: int
@@ -201,7 +200,7 @@ class IPCFileMeta:
 @dataclass
 class IPCFileMetaV2:
     """Contains single file meta information."""
-    root_cid: str
+    root_cid: CID
     bucket_name: str
     encoded_size: int
     size: int = 0
@@ -213,7 +212,7 @@ class IPCFileMetaV2:
 class IPCFileChunkUploadV2:
     """Contains single file chunk meta information."""
     index: int
-    chunk_cid: CIDType  # Now using proper CID type
+    chunk_cid: CID
     actual_size: int
     raw_data_size: int
     proto_node_size: int
