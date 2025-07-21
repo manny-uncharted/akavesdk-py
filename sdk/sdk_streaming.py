@@ -260,7 +260,7 @@ class StreamingAPI:
                 
                 # Add link to DAG root
                 self._add_dag_link(dag_root, chunk_upload.ChunkCID, chunk_upload.RawDataSize, chunk_upload.ProtoNodeSize)
-                
+
                 # Upload chunk
                 self._upload_chunk(ctx, chunk_upload)
                 
