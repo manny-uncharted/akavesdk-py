@@ -4,6 +4,8 @@ from web3 import Web3
 from web3.contract import Contract
 import json
 
+from .common_types import Signer
+
 class AccessManagerContract:
     """Python bindings for the AccessManager smart contract."""
     
@@ -126,7 +128,12 @@ class AccessManagerContract:
         
         self.contract = web3.eth.contract(address=contract_address, abi=self.abi)
 
-    def change_public_access(self, auth, file_id: bytes, is_public: bool) -> HexStr:
+    def change_public_access(
+        self,
+        auth: Signer,
+        file_id: bytes,
+        is_public: bool
+    ) -> HexStr:
         """Changes the public access status of a file matching Go SDK signature.
         
         Args:

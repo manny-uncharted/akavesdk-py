@@ -4,6 +4,8 @@ from web3 import Web3
 from web3.contract import Contract
 from eth_account import Account
 
+from .common_types import Signer 
+
 def get_raw_transaction(signed_tx):
     if hasattr(signed_tx, 'raw_transaction'):
         return signed_tx.raw_transaction  # web3 v7+
@@ -16,7 +18,11 @@ import json
 class StorageContract:
     """Python bindings for the Storage smart contract."""
     
-    def __init__(self, web3: Web3, contract_address: HexAddress):
+    def __init__(
+        self,
+        web3: Web3,
+        contract_address: HexAddress
+    ) -> None:
         """Initialize the Storage contract interface.
         
         Args:
@@ -1281,7 +1287,14 @@ class StorageContract:
         except Exception as e:
             raise Exception(f"Failed to delete bucket: {str(e)}")
 
-    def delete_file(self, auth, file_id: bytes, bucket_id: bytes, file_name: str, file_index: int) -> str:
+    def delete_file(
+        self,
+        auth: Signer,
+        file_id: bytes,
+        bucket_id: bytes,
+        file_name: str,
+        file_index: int
+    ) -> str:
         
         # Build transaction
         tx = self.contract.functions.deleteFile(file_id, bucket_id, file_name, file_index).build_transaction({

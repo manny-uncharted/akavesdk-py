@@ -16,12 +16,7 @@ import os
 import time
 
 from .types import (
-    Timestamp,                     
-    CIDLike,                       
-    BlockUpload,                   
-    NodeID,                        
-    NonceBytes,                    
-    CancellableContext             
+    CID           
 )
 
 try:
@@ -80,11 +75,39 @@ class AkaveContractFetcher:
         if self.channel:
             self.channel.close()
 
+
+class BucketCreateResult:
+    def __init__(self, name: str, created_at: Timestamp) -> None:
+        self.name = name
+        self.created_at = created_at
+
+class Bucket:
+    def __init__(self, name: str, created_at: Timestamp) -> None:
+        self.name = name
+        self.created_at = created_at
+
+def encryption_key_derivation(parent_key: bytes, *info_data: str) -> bytes:
+    if len(parent_key) == 0:
+        return None
+
+    info = "/".join(info_data)
+    key = derive_key(parent_key, info.encode())
+    return key
+
+
 class SDK:
-    def __init__(self, address: str, max_concurrency: int, block_part_size: int, use_connection_pool: bool,
-                 encryption_key: Optional[bytes] = None, private_key: Optional[str] = None,
-                 streaming_max_blocks_in_chunk: int = 32, parity_blocks_count: int = 0,
-                 ipc_address: Optional[str] = None):
+    def __init__(
+        self,
+        address: str,
+        max_concurrency: int,
+        block_part_size: int,
+        use_connection_pool: bool,
+        encryption_key: Optional[bytes] = None,
+        private_key: Optional[str] = None,
+        streaming_max_blocks_in_chunk: int = 32,
+        parity_blocks_count: int = 0,
+        ipc_address: Optional[str] = None
+    ) -> None:
         self.client = None
         self.conn = None
         self.ipc_conn = None
@@ -164,14 +187,14 @@ class SDK:
         logging.error("❌ All endpoints failed for contract fetching")
         return None
 
-    def close(self):
+    def close(self) -> None:
         """Close the gRPC channels."""
         if self.conn:
             self.conn.close()
         if self.ipc_conn and self.ipc_conn != self.conn:
             self.ipc_conn.close()
 
-    def streaming_api(self):
+    def streaming_api(self) -> StreamingAPI:
         """Returns SDK streaming API."""
         return StreamingAPI(
             conn=self.conn,
@@ -184,7 +207,7 @@ class SDK:
             max_blocks_in_chunk=self.streaming_max_blocks_in_chunk
         )
 
-    def ipc(self):
+    def ipc(self) -> IPC:
         """Returns SDK IPC API."""
         try:
             # Get connection parameters dynamically
@@ -237,7 +260,7 @@ class SDK:
         except Exception as e:
             raise SDKError(f"Failed to initialize IPC API: {str(e)}")
 
-    def create_bucket(self, ctx, name: str):
+    def create_bucket(self, ctx, name: str) -> BucketCreateResult:
         if len(name) < MIN_BUCKET_NAME_LENGTH:
             raise SDKError("Invalid bucket name")
 
@@ -245,7 +268,7 @@ class SDK:
         response = self.client.BucketCreate(request)
         return BucketCreateResult(name=response.name, created_at=response.created_at.AsTime() if hasattr(response.created_at, 'AsTime') else response.created_at)
 
-    def view_bucket(self, ctx, name: str):
+    def view_bucket(self, ctx, name: str) -> Bucket:
         if name == "":
             raise SDKError("Invalid bucket name")
 
@@ -288,20 +311,3 @@ class SDK:
         else:
             raise ValueError(f"Unknown CID codec: {codec_name}")
 
-class BucketCreateResult:
-    def __init__(self, name: str, created_at: Timestamp):
-        self.name = name
-        self.created_at = created_at
-
-class Bucket:
-    def __init__(self, name: str, created_at: Timestamp):
-        self.name = name
-        self.created_at = created_at
-
-def encryption_key_derivation(parent_key: bytes, *info_data: str) -> bytes:
-    if len(parent_key) == 0:
-        return None
-
-    info = "/".join(info_data)
-    key = derive_key(parent_key, info.encode())
-    return key

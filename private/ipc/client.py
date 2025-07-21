@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import time
-from typing import Optional
+from typing import Optional, Tuple
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
+from web3.types import TxReceipt
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
+
 from .contracts import StorageContract, AccessManagerContract
 
 class TransactionFailedError(Exception):
@@ -19,12 +23,24 @@ class Config:
         self.access_contract_address = access_contract_address
 
     @staticmethod
-    def default():
+    def default() -> Config:
         return Config(dial_uri="", private_key="", storage_contract_address="", access_contract_address="")
 
 class Client:
     """Represents the Ethereum storage client."""
-    def __init__(self, web3: Web3, auth: LocalAccount, storage: StorageContract, access_manager: Optional[AccessManagerContract] = None):
+
+    web3: Web3
+    auth: LocalAccount
+    storage: StorageContract
+    access_manager: Optional[AccessManagerContract]
+
+    def __init__(
+        self,
+        web3: Web3,
+        auth: LocalAccount,
+        storage: StorageContract,
+        access_manager: Optional[AccessManagerContract] = None
+    ) -> None:
         self.web3 = web3
         self.auth = auth
         self.storage = storage
@@ -32,7 +48,7 @@ class Client:
         # self.ticker = 0.2  # 200ms polling interval (currently unused)
 
     @classmethod
-    def dial(cls, config: Config) -> 'Client':
+    def dial(cls, config: Config) -> Client:
         """Creates a new IPC client with the given configuration.
         
         Args:
@@ -65,7 +81,7 @@ class Client:
         return cls(web3, account, storage, access_manager)
 
     @staticmethod
-    def _wait_for_tx_receipt(web3_instance: Web3, tx_hash: str, timeout: int = 120, poll_latency: float = 0.5):
+    def _wait_for_tx_receipt(web3_instance: Web3, tx_hash: str, timeout: int = 120, poll_latency: float = 0.5) -> TxReceipt:
         """Waits for a transaction receipt and raises an error if it failed."""
         try:
             receipt = web3_instance.eth.wait_for_transaction_receipt(
@@ -79,7 +95,7 @@ class Client:
              raise TimeoutError(f"Timeout waiting for transaction {tx_hash}") from e
 
     @classmethod
-    def deploy_storage(cls, config: Config):
+    def deploy_storage(cls, config: Config) -> Tuple[Client, str, str]:
         """Deploys Storage and AccessManager contracts.
 
         Requires ABI and Bytecode to be available. 
